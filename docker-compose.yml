@@ -1,0 +1,19 @@
+services:
+  qrghost:
+    build: .
+    container_name: qrghost
+    ports:
+      - "8222:8222"
+    volumes:
+      - ./certs:/certs:ro
+      - ./index.html:/app/index.html:ro
+      - ./manifest.json:/app/manifest.json:ro
+      - ./sw.js:/app/sw.js:ro
+      - ./icon-192.png:/app/icon-192.png:ro
+      - ./icon-512.png:/app/icon-512.png:ro
+    environment:
+      - BASE_DIR=/app
+      - CERTS_DIR=/certs
+      - PORT=8222
+    restart: unless-stopped
+

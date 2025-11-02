@@ -1,0 +1,26 @@
+services:
+  qrghost:
+    build: .
+    container_name: qrghost
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.qrghost.rule=Host(`qrghost.your.domain`)
+      - traefik.http.routers.qrghost.entrypoints=websecure
+      - traefik.http.routers.qrghost.tls=true
+      - traefik.http.services.qrghost.loadbalancer.server.port=8222
+      - traefik.docker.network=traefik_default
+    networks:
+      - default
+      - traefik_default
+    volumes:
+      - ./index.html:/app/index.html:ro
+      - ./manifest.json:/app/manifest.json:ro
+      - ./sw.js:/app/sw.js:ro
+      - ./icon-192.png:/app/icon-192.png:ro
+      - ./icon-512.png:/app/icon-512.png:ro
+
+    restart: unless-stopped
+networks:
+  traefik_default:
+    external: true
+
