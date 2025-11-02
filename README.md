@@ -73,6 +73,7 @@ The included `docker-compose-traefik.yml` is an **example** and must be adapted 
    ```
    docker-compose -f docker-compose-traefik.yml up -d --build
    ```
+- Set `REVERSE_PROXY=true` in environment when running behind a reverse proxy to disable SSL certificate validation.
 
 ### 5. 🖥️ Host with Any Web Server
 

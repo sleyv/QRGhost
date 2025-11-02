@@ -18,6 +18,10 @@ services:
       - ./sw.js:/app/sw.js:ro
       - ./icon-192.png:/app/icon-192.png:ro
       - ./icon-512.png:/app/icon-512.png:ro
+    environment:
+      - BASE_DIR=/app
+      - PORT=8222
+      - REVERSE_PROXY=true
 
     restart: unless-stopped
 networks:
