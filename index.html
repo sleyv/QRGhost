@@ -1046,7 +1046,7 @@
       async function aesImport(keyBytes){return await crypto.subtle.importKey('raw',keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt'])}
       async function aesEnc(key,nonce,plain){const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,plain);return new Uint8Array(ct)}
       async function aesDec(key,nonce,ct){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,ct);return new Uint8Array(pt)}
-      function shuffle(arr){for(let i=arr.length-1;i>0;i--){const r=new Uint32Array(1);crypto.getRandomValues(r);const j=r[0]%(i+1);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+      function shuffle(arr){for(let i=arr.length-1;i>0;i--){let j;const r=new Uint32Array(1);const limit=(2**32)-(2**32%(i+1));do{crypto.getRandomValues(r)}while(r[0]>=limit);j=r[0]%(i+1);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
       function containerSizeBytes(plain){return BLOCKS*(SALT_SIZE+NONCE_SIZE+(plain+TAG_SIZE))}
       function payloadLenForPlain(plain){const n=containerSizeBytes(plain);const b64len=Math.ceil(n/3)*4;return b64len}
       function tryQR(version,ecc,len){const s='H'.repeat(len);try{const q=qrcode(version,ecc);q.addData(s);q.make();return true}catch(e){return false}}
@@ -1070,7 +1070,7 @@
       function pickAutoVersionAndPlain(ecc,desiredPlain){for(let v=15;v<=40;v++){const cap=maxPlainFor(v,ecc);if(cap>=2 && desiredPlain<=cap){return {version:v,plain:cap}}}const cap40=maxPlainFor(40,ecc);if(cap40<2)throw new Error('Does not fit even in v40');return {version:40,plain:Math.min(MAX_PLAIN_CAP,cap40)}}
 
       async function buildBlock(secret,pass,PLAIN_SIZE){const salt=rnd(SALT_SIZE),nonce=rnd(NONCE_SIZE);let keyBytes;if(pass&&pass.length){keyBytes=await kdf(pass,salt)}else{keyBytes=rnd(32)}const key=await aesImport(keyBytes);const enc=padPlain(te.encode(secret||''),PLAIN_SIZE);const ct=await aesEnc(key,nonce,enc.buf);return {salt,nonce,ct,cut:enc.cut,from:enc.from}}
-      async function generateContainerDynamic(secrets,passes,PLAIN_SIZE){const blocks=[];let cuts=[];for(let i=0;i<BLOCKS;i++){const b=await buildBlock(secrets[i],passes[i],PLAIN_SIZE);blocks.push(b);cuts.push({i,cut:b.cut,from:b.from})}shuffle(blocks);const total=containerSizeBytes(PLAIN_SIZE);const out=new Uint8Array(total);let off=0;for(const b of blocks){out.set(b.salt,off);off+=SALT_SIZE;out.set(b.nonce,off);off+=NONCE_SIZE;out.set(b.ct,off);off+=PLAIN_SIZE+TAG_SIZE}return {bin:out,cuts}}
+      async function generateContainerDynamic(secrets,passes,PLAIN_SIZE){const blocks=[];let cuts=[];for(let i=0;i<BLOCKS;i++){const b=await buildBlock(secrets[i],passes[i],PLAIN_SIZE);blocks.push(b);cuts.push({i,cut:b.cut,from:b.from})}shuffle(blocks);const total=containerSizeBytes(PLAIN_SIZE);const out=new Uint8Array(total);crypto.getRandomValues(out);let off=0;for(const b of blocks){out.set(b.salt,off);off+=SALT_SIZE;out.set(b.nonce,off);off+=NONCE_SIZE;out.set(b.ct,off);off+=PLAIN_SIZE+TAG_SIZE}return {bin:out,cuts}}
 
       function makeQRFixed(version,ecc,data){const qr=qrcode(version,ecc);qr.addData(data);qr.make();return qr}
       function renderQR(qr){const svg=qr.createSvgTag({cellSize:4,margin:4});document.getElementById('qrOut').innerHTML=svg}
@@ -1299,7 +1299,7 @@
 
 
       function parseContainer(u8){let off=0;const perBlockLen=u8.length/BLOCKS;const ctLen=perBlockLen-(SALT_SIZE+NONCE_SIZE);if(ctLen<0||u8.length%BLOCKS!==0)throw new Error('bad len');const blocks=[];for(let i=0;i<BLOCKS;i++){const salt=u8.slice(off,off+SALT_SIZE);off+=SALT_SIZE;const nonce=u8.slice(off,off+NONCE_SIZE);off+=NONCE_SIZE;const ct=u8.slice(off,off+ctLen);off+=ctLen;blocks.push({salt,nonce,ct})}return {blocks}}
-      async function tryDecryptAll(container,passes){const out=[];for(const pass of passes){if(!pass){out.push('(not decrypted)');continue}let found=false;for(const b of container.blocks){try{const keyBytes=await kdf(pass,b.salt);const key=await aesImport(keyBytes);const pt=await aesDec(key,b.nonce,b.ct);const data=unpadPlain(pt);out.push(td.decode(data));found=true;break}catch(e){}}if(!found)out.push('(not decrypted)')}return out}
+      async function tryDecryptAll(container,passes){const out=[];for(const pass of passes){if(!pass){out.push('(not decrypted)');continue}let found=false;for(const b of container.blocks){try{const keyBytes=await kdf(pass,b.salt);const key=await aesImport(keyBytes);const pt=await aesDec(key,b.nonce,b.ct);const data=unpadPlain(pt);out.push(td.decode(data));found=true;}catch(e){}}if(!found)out.push('(not decrypted)')}return out}
       function renderDecoded(list){const out=document.getElementById('decOut');out.innerHTML='';list.forEach((v,i)=>{const item=document.createElement('div');item.className='secret';const head=document.createElement('div');head.className='secretHead';const title=document.createElement('div');title.textContent='Secret '+String.fromCharCode(65+i);const btn=document.createElement('button');btn.className='btn secondary small';btn.textContent='📋 Копировать';btn.onclick=()=>navigator.clipboard.writeText(v);head.appendChild(title);head.appendChild(btn);const body=document.createElement('div');body.className='mono';body.textContent=v;item.appendChild(head);item.appendChild(body);out.appendChild(item);const sep=document.createElement('div');sep.style.height='8px';out.appendChild(sep)});if(!list.length){out.textContent=''}}
 
       function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
@@ -1353,7 +1353,7 @@
         try{
           const s1=secrets[0].value.trim(), s2=secrets[1].value.trim(), s3=secrets[2].value.trim();
           const p1=passwords[0].value, p2=passwords[1].value, p3=passwords[2].value;
-          let desiredPlain=desiredPlainFromSecrets(s1,s2,s3);
+          let desiredPlain=MAX_PLAIN_CAP;
           let version,PLAIN_SIZE;
           if(verSel==='auto'){
             const pick=pickAutoVersionAndPlain(ecc,desiredPlain);
