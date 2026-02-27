@@ -1,4 +1,5 @@
 import os
+import ssl
 from sanic import Sanic, response
 from sanic.response import file
 from sanic.log import logger
@@ -33,15 +34,23 @@ async def manifest(request):
 app.static("/", BASE_DIR, index="index.html", name="root")
 
 if __name__ == "__main__":
-    ssl_enabled = False
+    ssl_context = None
     
     if not REVERSE_PROXY:
-        if Path(CERTS_DIR).is_dir() and Path(f"{CERTS_DIR}/fullchain.pem").exists() and Path(f"{CERTS_DIR}/privkey.pem").exists():
-            ssl_enabled = True
+        cert_path = Path(f"{CERTS_DIR}/fullchain.pem")
+        key_path = Path(f"{CERTS_DIR}/privkey.pem")
+
+        if Path(CERTS_DIR).is_dir() and cert_path.exists() and key_path.exists():
+            try:
+                ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                ssl_context.load_cert_chain(certfile=str(cert_path), keyfile=str(key_path))
+            except Exception as e:
+                logger.error(f"Failed to load SSL certificates: {e}")
+                ssl_context = None
     
     app.run(
         host="0.0.0.0",
         port=int(os.getenv("PORT", 8222)),
-        ssl=CERTS_DIR if ssl_enabled else None
+        ssl=ssl_context,
+        single_process=True
     )
-
