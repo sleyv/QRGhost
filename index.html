@@ -1002,8 +1002,22 @@
       </div>
     </div>
 
-    <footer style="text-align:center; margin-top: 40px; padding-bottom: 20px; color: var(--muted); font-size: 12px; position: relative; z-index: 10;">
-      <a href="https://github.com/sleyv/QRGhost" target="_blank" style="color: var(--acc); text-decoration: none;">GitHub: sleyv/QRGhost</a>
+    <style>
+      .footer-link {
+        color: var(--acc);
+        text-decoration: none;
+        text-shadow: 0 0 8px rgba(0, 242, 170, 0.6), 0 0 16px rgba(0, 242, 170, 0.4);
+        font-weight: bold;
+        letter-spacing: 1px;
+        transition: text-shadow 0.3s ease, color 0.3s ease;
+      }
+      .footer-link:hover {
+        color: var(--ink);
+        text-shadow: 0 0 12px rgba(215, 255, 232, 0.8), 0 0 24px rgba(215, 255, 232, 0.6);
+      }
+    </style>
+    <footer style="text-align:center; margin-top: 15px; padding-bottom: 25px; font-size: 14px; position: relative; z-index: 10;">
+      <a href="https://github.com/sleyv/QRGhost" target="_blank" class="footer-link">GitHub: sleyv/QRGhost</a>
     </footer>
 
     <script>
