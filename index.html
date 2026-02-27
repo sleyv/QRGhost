@@ -759,30 +759,10 @@
                   <select id="ver">
                     <option value="auto" selected>Auto (min. v15)</option>
                     <option value="15">15</option>
-                    <option value="16">16</option>
-                    <option value="17">17</option>
-                    <option value="18">18</option>
-                    <option value="19">19</option>
                     <option value="20">20</option>
-                    <option value="21">21</option>
-                    <option value="22">22</option>
-                    <option value="23">23</option>
-                    <option value="24">24</option>
                     <option value="25">25</option>
-                    <option value="26">26</option>
-                    <option value="27">27</option>
-                    <option value="28">28</option>
-                    <option value="29">29</option>
                     <option value="30">30</option>
-                    <option value="31">31</option>
-                    <option value="32">32</option>
-                    <option value="33">33</option>
-                    <option value="34">34</option>
                     <option value="35">35</option>
-                    <option value="36">36</option>
-                    <option value="37">37</option>
-                    <option value="38">38</option>
-                    <option value="39">39</option>
                     <option value="40">40</option>
                   </select>
                 </div>
@@ -1022,6 +1002,10 @@
       </div>
     </div>
 
+    <footer style="text-align:center; margin-top: 40px; padding-bottom: 20px; color: var(--muted); font-size: 12px;">
+      <a href="https://github.com/sleyv/QRGhost" target="_blank" style="color: var(--acc); text-decoration: none;">GitHub: sleyv/QRGhost</a>
+    </footer>
+
     <script>
       const ARGON_TIME=8,ARGON_MEM_MIB=64,ARGON_PAR=4;
       const SALT_SIZE=16,NONCE_SIZE=12,TAG_SIZE=16,BLOCKS=3;
@@ -1046,7 +1030,7 @@
       async function aesImport(keyBytes){return await crypto.subtle.importKey('raw',keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt'])}
       async function aesEnc(key,nonce,plain){const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,plain);return new Uint8Array(ct)}
       async function aesDec(key,nonce,ct){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,ct);return new Uint8Array(pt)}
-      function shuffle(arr){for(let i=arr.length-1;i>0;i--){const r=new Uint32Array(1);crypto.getRandomValues(r);const j=r[0]%(i+1);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
+      function shuffle(arr){for(let i=arr.length-1;i>0;i--){const r=new Uint32Array(1);let j;const max=Math.floor(4294967295/(i+1))*(i+1);do{crypto.getRandomValues(r)}while(r[0]>=max);j=r[0]%(i+1);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
       function containerSizeBytes(plain){return BLOCKS*(SALT_SIZE+NONCE_SIZE+(plain+TAG_SIZE))}
       function payloadLenForPlain(plain){const n=containerSizeBytes(plain);const b64len=Math.ceil(n/3)*4;return b64len}
       function tryQR(version,ecc,len){const s='H'.repeat(len);try{const q=qrcode(version,ecc);q.addData(s);q.make();return true}catch(e){return false}}
@@ -1067,10 +1051,10 @@
 
       function utf8len(s){return te.encode(s||'').length}
       function desiredPlainFromSecrets(s1,s2,s3){const L=Math.max(utf8len(s1),utf8len(s2),utf8len(s3));return Math.max(2,Math.min(MAX_PLAIN_CAP,2+L))}
-      function pickAutoVersionAndPlain(ecc,desiredPlain){for(let v=15;v<=40;v++){const cap=maxPlainFor(v,ecc);if(cap>=2 && desiredPlain<=cap){return {version:v,plain:cap}}}const cap40=maxPlainFor(40,ecc);if(cap40<2)throw new Error('Does not fit even in v40');return {version:40,plain:Math.min(MAX_PLAIN_CAP,cap40)}}
+      function pickAutoVersionAndPlain(ecc,desiredPlain){for(let v=15;v<=40;v+=5){const cap=maxPlainFor(v,ecc);if(cap>=2 && desiredPlain<=cap){return {version:v,plain:cap}}}const cap40=maxPlainFor(40,ecc);if(cap40<2)throw new Error('Does not fit even in v40');return {version:40,plain:cap40}}
 
       async function buildBlock(secret,pass,PLAIN_SIZE){const salt=rnd(SALT_SIZE),nonce=rnd(NONCE_SIZE);let keyBytes;if(pass&&pass.length){keyBytes=await kdf(pass,salt)}else{keyBytes=rnd(32)}const key=await aesImport(keyBytes);const enc=padPlain(te.encode(secret||''),PLAIN_SIZE);const ct=await aesEnc(key,nonce,enc.buf);return {salt,nonce,ct,cut:enc.cut,from:enc.from}}
-      async function generateContainerDynamic(secrets,passes,PLAIN_SIZE){const blocks=[];let cuts=[];for(let i=0;i<BLOCKS;i++){const b=await buildBlock(secrets[i],passes[i],PLAIN_SIZE);blocks.push(b);cuts.push({i,cut:b.cut,from:b.from})}shuffle(blocks);const total=containerSizeBytes(PLAIN_SIZE);const out=new Uint8Array(total);let off=0;for(const b of blocks){out.set(b.salt,off);off+=SALT_SIZE;out.set(b.nonce,off);off+=NONCE_SIZE;out.set(b.ct,off);off+=PLAIN_SIZE+TAG_SIZE}return {bin:out,cuts}}
+      async function generateContainerDynamic(secrets,passes,PLAIN_SIZE){const blocks=[];let cuts=[];for(let i=0;i<BLOCKS;i++){const s=secrets[i],p=passes[i];if(!p){const b={salt:rnd(SALT_SIZE),nonce:rnd(NONCE_SIZE),ct:rnd(PLAIN_SIZE+TAG_SIZE),cut:0,from:0};blocks.push(b);cuts.push({i,cut:0,from:0});continue}const b=await buildBlock(s,p,PLAIN_SIZE);blocks.push(b);cuts.push({i,cut:b.cut,from:b.from})}shuffle(blocks);const total=containerSizeBytes(PLAIN_SIZE);const out=new Uint8Array(total);let off=0;for(const b of blocks){out.set(b.salt,off);off+=SALT_SIZE;out.set(b.nonce,off);off+=NONCE_SIZE;out.set(b.ct,off);off+=PLAIN_SIZE+TAG_SIZE}return {bin:out,cuts}}
 
       function makeQRFixed(version,ecc,data){const qr=qrcode(version,ecc);qr.addData(data);qr.make();return qr}
       function renderQR(qr){const svg=qr.createSvgTag({cellSize:4,margin:4});document.getElementById('qrOut').innerHTML=svg}
@@ -1299,7 +1283,7 @@
 
 
       function parseContainer(u8){let off=0;const perBlockLen=u8.length/BLOCKS;const ctLen=perBlockLen-(SALT_SIZE+NONCE_SIZE);if(ctLen<0||u8.length%BLOCKS!==0)throw new Error('bad len');const blocks=[];for(let i=0;i<BLOCKS;i++){const salt=u8.slice(off,off+SALT_SIZE);off+=SALT_SIZE;const nonce=u8.slice(off,off+NONCE_SIZE);off+=NONCE_SIZE;const ct=u8.slice(off,off+ctLen);off+=ctLen;blocks.push({salt,nonce,ct})}return {blocks}}
-      async function tryDecryptAll(container,passes){const out=[];for(const pass of passes){if(!pass){out.push('(not decrypted)');continue}let found=false;for(const b of container.blocks){try{const keyBytes=await kdf(pass,b.salt);const key=await aesImport(keyBytes);const pt=await aesDec(key,b.nonce,b.ct);const data=unpadPlain(pt);out.push(td.decode(data));found=true;break}catch(e){}}if(!found)out.push('(not decrypted)')}return out}
+      async function tryDecryptAll(container,passes){const out=[];for(const pass of passes){if(!pass){continue}let found=false;for(let i=0;i<container.blocks.length;i++){const b=container.blocks[i];try{const keyBytes=await kdf(pass,b.salt);const key=await aesImport(keyBytes);const pt=await aesDec(key,b.nonce,b.ct);const data=unpadPlain(pt);out.push(td.decode(data));found=true;break}catch(e){}}}return out.length ? out : ['(No secrets decrypted)']}
       function renderDecoded(list){const out=document.getElementById('decOut');out.innerHTML='';list.forEach((v,i)=>{const item=document.createElement('div');item.className='secret';const head=document.createElement('div');head.className='secretHead';const title=document.createElement('div');title.textContent='Secret '+String.fromCharCode(65+i);const btn=document.createElement('button');btn.className='btn secondary small';btn.textContent='📋 Копировать';btn.onclick=()=>navigator.clipboard.writeText(v);head.appendChild(title);head.appendChild(btn);const body=document.createElement('div');body.className='mono';body.textContent=v;item.appendChild(head);item.appendChild(body);out.appendChild(item);const sep=document.createElement('div');sep.style.height='8px';out.appendChild(sep)});if(!list.length){out.textContent=''}}
 
       function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
@@ -1363,7 +1347,7 @@
             version=parseInt(verSel,10);
             const cap=maxPlainFor(version,ecc);
             if(cap<2)throw new Error('Does not fit in chosen QR version; increase version or enable Auto');
-            PLAIN_SIZE=Math.min(cap,MAX_PLAIN_CAP);
+            PLAIN_SIZE=cap;
             document.getElementById('sVer').textContent=String(version);
           }
           statsApply(version,ecc,PLAIN_SIZE);
