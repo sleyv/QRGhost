@@ -1021,7 +1021,7 @@
     </footer>
 
     <script>
-      const ARGON_TIME=8,ARGON_MEM_MIB=64,ARGON_PAR=4;
+      const ARGON_TIME=8,ARGON_MEM_MIB=96,ARGON_PAR=4;
       const SALT_SIZE=16,NONCE_SIZE=12,TAG_SIZE=16,BLOCKS=3;
       const MAX_PLAIN_CAP=689;
       const te=new TextEncoder(),td=new TextDecoder();
@@ -1073,7 +1073,7 @@
       function makeQRFixed(version,ecc,data){const qr=qrcode(version,ecc);qr.addData(data);qr.make();return qr}
       function renderQR(qr){const svg=qr.createSvgTag({cellSize:4,margin:4});document.getElementById('qrOut').innerHTML=svg}
 
-      function randSuffix(n){const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let s='';const a=new Uint8Array(n);crypto.getRandomValues(a);for(let i=0;i<n;i++)s+=chars[a[i]%chars.length];return s}
+      function randSuffix(n){const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let s='';const max=Math.floor(256/chars.length)*chars.length;const a=new Uint8Array(1);for(let i=0;i<n;i++){do{crypto.getRandomValues(a)}while(a[0]>=max);s+=chars[a[0]%chars.length];}return s}
 
       async function exportQRasPNG(returnBlob = false) {
         const svg = document.querySelector('#qrOut svg');
@@ -1297,7 +1297,7 @@
 
 
       function parseContainer(u8){let off=0;const perBlockLen=u8.length/BLOCKS;const ctLen=perBlockLen-(SALT_SIZE+NONCE_SIZE);if(ctLen<0||u8.length%BLOCKS!==0)throw new Error('bad len');const blocks=[];for(let i=0;i<BLOCKS;i++){const salt=u8.slice(off,off+SALT_SIZE);off+=SALT_SIZE;const nonce=u8.slice(off,off+NONCE_SIZE);off+=NONCE_SIZE;const ct=u8.slice(off,off+ctLen);off+=ctLen;blocks.push({salt,nonce,ct})}return {blocks}}
-      async function tryDecryptAll(container,passes){const out=[];for(const pass of passes){if(!pass){continue}let decryptedForPass=null;for(let i=0;i<container.blocks.length;i++){const b=container.blocks[i];try{const keyBytes=await kdf(pass,b.salt);const key=await aesImport(keyBytes);const pt=await aesDec(key,b.nonce,b.ct);const data=unpadPlain(pt);if(!decryptedForPass){decryptedForPass=td.decode(data)}}catch(e){}}if(decryptedForPass){out.push(decryptedForPass)}}return out.length ? out : ['(No secrets decrypted)']}
+      async function tryDecryptAll(container,passes){const out=[];for(const pass of passes){if(!pass){continue}let decryptedForPass=null;for(let i=0;i<container.blocks.length;i++){const b=container.blocks[i];try{const keyBytes=await kdf(pass,b.salt);const key=await aesImport(keyBytes);const pt=await aesDec(key,b.nonce,b.ct);const data=unpadPlain(pt);if(!decryptedForPass){decryptedForPass=td.decode(data)}}catch(e){try{const dummyData=new Uint8Array(2);dummyData[0]=0;dummyData[1]=0;td.decode(dummyData)}catch(err){}}}if(decryptedForPass){out.push(decryptedForPass)}}return out.length ? out : ['(No secrets decrypted)']}
       function renderDecoded(list){const out=document.getElementById('decOut');out.innerHTML='';list.forEach((v,i)=>{const item=document.createElement('div');item.className='secret';const head=document.createElement('div');head.className='secretHead';const title=document.createElement('div');title.textContent='Secret '+String.fromCharCode(65+i);const btn=document.createElement('button');btn.className='btn secondary small';btn.textContent='📋 Копировать';btn.onclick=()=>navigator.clipboard.writeText(v);head.appendChild(title);head.appendChild(btn);const body=document.createElement('div');body.className='mono';body.textContent=v;item.appendChild(head);item.appendChild(body);out.appendChild(item);const sep=document.createElement('div');sep.style.height='8px';out.appendChild(sep)});if(!list.length){out.textContent=''}}
 
       function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
