@@ -1059,19 +1059,29 @@
 
       function utf8len(s){return te.encode(s||'').length}
       function calcOverhead(layerCount) { return layerCount * (SALT_SIZE + NONCE_SIZE + TAG_SIZE); }
-      function desiredCapFromSecrets(secrets) {
+      function truncateToUTF8Bytes(str, maxBytes) {
+        let u8 = te.encode(str);
+        if (u8.length <= maxBytes) return str;
+        u8 = u8.slice(0, maxBytes);
+        // Ensure we don't slice multi-byte UTF-8 characters midway
+        while (u8.length > 0 && (u8[u8.length - 1] & 0xC0) === 0x80) u8 = u8.slice(0, u8.length - 1);
+        if (u8.length > 0 && (u8[u8.length - 1] & 0xC0) === 0xC0) u8 = u8.slice(0, u8.length - 1);
+        return td.decode(u8);
+      }
+
+      function desiredCapFromActivePairs(secrets, passes) {
         let total = 0;
         let count = 0;
-        for (const s of secrets) {
-          if (s !== undefined && s !== null && s !== '') {
-            total += utf8len(s) + 2; // +2 for length header
+        for (let i = 0; i < secrets.length; i++) {
+          if (passes[i]) {
+            total += utf8len(secrets[i] || '') + 2; // +2 for length header
             count++;
           }
         }
         if (count === 0) return 64; // arbitrary minimum capacity
         return total + calcOverhead(count);
       }
-      function pickAutoVersionAndPlain(ecc,desiredCap){for(let v=15;v<=40;v+=5){const cap=maxPlainFor(v,ecc);if(cap>=desiredCap){return {version:v,plain:cap}}}const cap40=maxPlainFor(40,ecc);if(cap40<desiredCap)throw new Error('Does not fit even in v40');return {version:40,plain:cap40}}
+      function pickAutoVersionAndPlain(ecc,desiredCap){for(let v=15;v<=40;v+=5){const cap=maxPlainFor(v,ecc);if(cap>=desiredCap){return {version:v,plain:cap}}}const cap40=maxPlainFor(40,ecc);return {version:40,plain:cap40}}
 
       async function generateNestedContainer(secrets, passes, MAX_CAP) {
         const layers = [];
@@ -1417,10 +1427,10 @@
       function maskedBase64Preview(){if(!lastBase64)return '';const tail=lastBase64.slice(-10);return '…'+tail}
       function renderBlob(metaText,cutInfo){
         const lines=[];
-        if(showRaw && lastPayload){lines.push(lastPayload)}
-        else if(lastBase64){lines.push(maskedBase64Preview())}
+        if(showRaw && window.lastPayload){lines.push(window.lastPayload)}
+        else if(window.lastBase64){lines.push(maskedBase64Preview())}
         if(metaText)lines.push('',metaText);
-        if(cutInfo && cutInfo.length){lines.push('Truncation:');for(const l of cutInfo)lines.push(l)}
+        if(cutInfo && cutInfo.length){lines.push('⚠️ WARNING: Data exceeded QR capacity! Truncation applied:');for(const l of cutInfo)lines.push(l)}
         blobDiv.textContent=lines.join('\n');
         btnToggleRaw.textContent=showRaw?'🙈 Hide':'👁️ Show';
       }
@@ -1459,9 +1469,13 @@
         await new Promise(r=>requestAnimationFrame(r));
         await new Promise(r=>requestAnimationFrame(r));
         try{
-          const s1=secrets[0].value.trim(), s2=secrets[1].value.trim(), s3=secrets[2].value.trim();
-          const p1=passwords[0].value, p2=passwords[1].value, p3=passwords[2].value;
-          let desiredCap=desiredCapFromSecrets([s1,s2,s3]);
+          let s1=secrets[0].value.trim(), s2=secrets[1].value.trim(), s3=secrets[2].value.trim();
+          let p1=passwords[0].value, p2=passwords[1].value, p3=passwords[2].value;
+
+          let rawSecrets = [s1, s2, s3];
+          let passes = [p1, p2, p3];
+          let desiredCap=desiredCapFromActivePairs(rawSecrets, passes);
+
           let version,MAX_CAP;
           if(verSel==='auto'){
             const pick=pickAutoVersionAndPlain(ecc,desiredCap);
@@ -1469,13 +1483,56 @@
             document.getElementById('sVer').textContent='Auto→v'+version;
           }else{
             version=parseInt(verSel,10);
-            const cap=maxPlainFor(version,ecc);
-            if(cap<desiredCap)throw new Error('Does not fit in chosen QR version; increase version or enable Auto');
-            MAX_CAP=cap;
+            MAX_CAP=maxPlainFor(version,ecc);
+            if(MAX_CAP<1)throw new Error('Invalid QR version or ECC configuration');
             document.getElementById('sVer').textContent=String(version);
           }
+
+          let activeCount = passes.filter(p => !!p).length;
+          let availablePlaintextBytes = MAX_CAP - calcOverhead(activeCount);
+          if (availablePlaintextBytes < activeCount * 2) {
+             throw new Error("QR Version too small to even store headers for this many secrets.");
+          }
+
+          availablePlaintextBytes -= activeCount * 2; // Subtract header bytes
+
+          // Water-filling Truncation Allocation
+          let finalSecrets = [...rawSecrets];
+          let cutInfo = [];
+          if (desiredCap > MAX_CAP) {
+            let activeIndices = [];
+            for (let i = 0; i < 3; i++) {
+               if (passes[i]) activeIndices.push(i);
+            }
+
+            // Sort indices by the byte length of their secrets (smallest to largest)
+            activeIndices.sort((a, b) => utf8len(rawSecrets[a]) - utf8len(rawSecrets[b]));
+
+            let remainingSpace = availablePlaintextBytes;
+            let remainingSlots = activeCount;
+
+            for (let idx of activeIndices) {
+              let fairShare = Math.floor(remainingSpace / remainingSlots);
+              let sLen = utf8len(rawSecrets[idx]);
+
+              if (sLen <= fairShare) {
+                 // Secret fits entirely within its fair share
+                 remainingSpace -= sLen;
+              } else {
+                 // Secret is larger than fair share. It gets truncated to fair share.
+                 let truncatedStr = truncateToUTF8Bytes(rawSecrets[idx], fairShare);
+                 let actualTruncatedLen = utf8len(truncatedStr);
+                 finalSecrets[idx] = truncatedStr;
+                 remainingSpace -= actualTruncatedLen;
+
+                 cutInfo.push(`Secret ${String.fromCharCode(65+idx)}: truncated to ${actualTruncatedLen} bytes.`);
+              }
+              remainingSlots--;
+            }
+          }
+
           statsApply(version,ecc,MAX_CAP);
-          const res=await generateNestedContainer([s1,s2,s3],[p1,p2,p3],MAX_CAP);
+          const res=await generateNestedContainer(finalSecrets, passes, MAX_CAP);
 
           // Use raw binary for the QR code, but keep base64 for copy-pasting
           const b64Payload = toB64u(res.bin);
@@ -1489,7 +1546,7 @@
           renderQR(qr);
 
           const meta='QR version: '+document.getElementById('sVer').textContent+' | ECC: '+ecc+' | Capacity: '+MAX_CAP+' bytes';
-          renderBlob(meta,[]); // Cuts are no longer used in nested architecture
+          renderBlob(meta,cutInfo);
         }catch(e){blobDiv.textContent='Error: '+e.message; console.error(e);}
         finally{qrSpin.classList.remove('show')}
         } finally {
@@ -1633,6 +1690,21 @@
         drop.addEventListener('drop',e=>{const items=e.dataTransfer&&e.dataTransfer.files;if(items&&items.length)processFiles(items)});
       }
       fileIn.onchange=e=>{const f=e.target.files;if(f&&f.length)processFiles(f)};
+
+      document.addEventListener('paste', e => {
+        // Only process pastes when we are on the decrypt tab
+        if (!document.getElementById('dec').classList.contains('active')) return;
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        const files = [];
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) files.push(file);
+          }
+        }
+        if (files.length) processFiles(files);
+      });
 
       async function imageToImageData(file){
         const url=URL.createObjectURL(file);
