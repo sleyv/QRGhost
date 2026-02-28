@@ -20,7 +20,7 @@ QRGhost is a secure, plausible-deniability focused QR code generator and data en
 
 First, clone the repository to your local machine:
 ```
-git clone https://codeberg.org/sley/QRGhost.git
+git clone https://github.com/sleyv/QRGhost.git
 cd QRGhost
 ```
 
