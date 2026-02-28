@@ -30,7 +30,18 @@ async def service_worker(request):
 async def manifest(request):
     return await file(f"{BASE_DIR}/manifest.json", mime_type="application/json")
 
-app.static("/", BASE_DIR, index="index.html", name="root")
+@app.get("/", name="root")
+@app.get("/index.html", name="index_html")
+async def index(request):
+    return await file(f"{BASE_DIR}/index.html", mime_type="text/html")
+
+@app.get("/icon-192.png")
+async def icon_192(request):
+    return await file(f"{BASE_DIR}/icon-192.png", mime_type="image/png")
+
+@app.get("/icon-512.png")
+async def icon_512(request):
+    return await file(f"{BASE_DIR}/icon-512.png", mime_type="image/png")
 
 if __name__ == "__main__":
     ssl_enabled = False
