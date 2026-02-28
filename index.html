@@ -1023,7 +1023,7 @@
       function rnd(n){const a=new Uint8Array(n);crypto.getRandomValues(a);return a}
       function u16(n){const b=new Uint8Array(2);new DataView(b.buffer).setUint16(0,n,false);return b}
       function fromB64u(s){s=s.replace(/-/g,'+').replace(/_/g,'/');const pad=s.length%4?4-(s.length%4):0;return Uint8Array.from(atob(s+'='.repeat(pad)),c=>c.charCodeAt(0))}
-      function toB64u(b){let bin='';const chunk=8192;for(let i=0;i<b.length;i+=chunk)bin+=String.fromCharCode.apply(null,b.subarray(i,i+chunk));let s=btoa(bin);return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+      function toB64u(b){let s=btoa(String.fromCharCode.apply(null,b));return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
       function concat(arrs){let n=0;for(const a of arrs)n+=a.length;const out=new Uint8Array(n);let o=0;for(const a of arrs){out.set(a,o);o+=a.length}return out}
       async function kdf(pass,salt){const passBytes=te.encode(pass);const res=await argon2.hash({pass:passBytes,salt:salt,mem:ARGON_MEM_MIB*1024,time:ARGON_TIME,hashLen:32,parallelism:ARGON_PAR,type:argon2.ArgonType.Argon2id});return new Uint8Array(res.hash)}
       async function aesImport(keyBytes){return await crypto.subtle.importKey('raw',keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt'])}
