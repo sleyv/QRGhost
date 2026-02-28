@@ -759,30 +759,10 @@
                   <select id="ver">
                     <option value="auto" selected>Auto (min. v15)</option>
                     <option value="15">15</option>
-                    <option value="16">16</option>
-                    <option value="17">17</option>
-                    <option value="18">18</option>
-                    <option value="19">19</option>
                     <option value="20">20</option>
-                    <option value="21">21</option>
-                    <option value="22">22</option>
-                    <option value="23">23</option>
-                    <option value="24">24</option>
                     <option value="25">25</option>
-                    <option value="26">26</option>
-                    <option value="27">27</option>
-                    <option value="28">28</option>
-                    <option value="29">29</option>
                     <option value="30">30</option>
-                    <option value="31">31</option>
-                    <option value="32">32</option>
-                    <option value="33">33</option>
-                    <option value="34">34</option>
                     <option value="35">35</option>
-                    <option value="36">36</option>
-                    <option value="37">37</option>
-                    <option value="38">38</option>
-                    <option value="39">39</option>
                     <option value="40">40</option>
                   </select>
                 </div>
@@ -805,7 +785,7 @@
             </div>
             <div class="section flex">
               <button class="btn ok" id="btnGen">🔐 Generate QR</button>
-              <button class="btn secondary" id="btnCopy">📋 Copy base64</button>
+              <button class="btn secondary" id="btnCopy">📋 Copy raw</button>
             </div>
             <div
               class="section"
@@ -1022,12 +1002,29 @@
       </div>
     </div>
 
+    <style>
+      .footer-link {
+        color: var(--acc);
+        text-decoration: none;
+        text-shadow: 0 0 8px rgba(0, 242, 170, 0.6), 0 0 16px rgba(0, 242, 170, 0.4);
+        font-weight: bold;
+        letter-spacing: 1px;
+        transition: text-shadow 0.3s ease, color 0.3s ease;
+      }
+      .footer-link:hover {
+        color: var(--ink);
+        text-shadow: 0 0 12px rgba(215, 255, 232, 0.8), 0 0 24px rgba(215, 255, 232, 0.6);
+      }
+    </style>
+    <footer style="text-align:center; margin-top: 15px; padding-bottom: 25px; font-size: 14px; position: relative; z-index: 10;">
+      <a href="https://github.com/sleyv/QRGhost" target="_blank" class="footer-link">GitHub: sleyv/QRGhost</a>
+    </footer>
+
     <script>
-      const ARGON_TIME=8,ARGON_MEM_MIB=64,ARGON_PAR=4;
-      const SALT_SIZE=16,NONCE_SIZE=12,TAG_SIZE=16,BLOCKS=3;
-      const MAX_PLAIN_CAP=689;
+      const ARGON_TIME=8,ARGON_MEM_MIB=96,ARGON_PAR=4;
+      const SALT_SIZE=16,NONCE_SIZE=12,TAG_SIZE=16;
       const te=new TextEncoder(),td=new TextDecoder();
-      let lastPayload="",lastBase64="";
+      window.lastPayload="";window.lastBase64="";
       let showRaw=false;
       if (!window.crypto || !window.crypto.subtle) {
           alert('ERROR. Open file via HTTPS or localhost');
@@ -1040,19 +1037,14 @@
       function fromB64u(s){s=s.replace(/-/g,'+').replace(/_/g,'/');const pad=s.length%4?4-(s.length%4):0;return Uint8Array.from(atob(s+'='.repeat(pad)),c=>c.charCodeAt(0))}
       function toB64u(b){let bin='';for(let i=0;i<b.length;i++)bin+=String.fromCharCode(b[i]);let s=btoa(bin);return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
       function concat(arrs){let n=0;for(const a of arrs)n+=a.length;const out=new Uint8Array(n);let o=0;for(const a of arrs){out.set(a,o);o+=a.length}return out}
-      function padPlain(u8,PLAIN_SIZE){let data=u8;let cut=0;let from=0;if(data.length>PLAIN_SIZE-2){from=PLAIN_SIZE-2;cut=data.length-(PLAIN_SIZE-2);data=data.slice(0,PLAIN_SIZE-2)}const len=u16(data.length),padLen=PLAIN_SIZE-2-data.length,pad=rnd(padLen);return {buf:concat([len,data,pad]),cut,from}}
-      function unpadPlain(u8){const len=new DataView(u8.buffer,u8.byteOffset,2).getUint16(0,false);return u8.slice(2,2+len)}
       async function kdf(pass,salt){const passBytes=te.encode(pass);const res=await argon2.hash({pass:passBytes,salt:salt,mem:ARGON_MEM_MIB*1024,time:ARGON_TIME,hashLen:32,parallelism:ARGON_PAR,type:argon2.ArgonType.Argon2id});return new Uint8Array(res.hash)}
       async function aesImport(keyBytes){return await crypto.subtle.importKey('raw',keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt'])}
       async function aesEnc(key,nonce,plain){const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,plain);return new Uint8Array(ct)}
       async function aesDec(key,nonce,ct){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,ct);return new Uint8Array(pt)}
-      function shuffle(arr){for(let i=arr.length-1;i>0;i--){const r=new Uint32Array(1);crypto.getRandomValues(r);const j=r[0]%(i+1);[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
-      function containerSizeBytes(plain){return BLOCKS*(SALT_SIZE+NONCE_SIZE+(plain+TAG_SIZE))}
-      function payloadLenForPlain(plain){const n=containerSizeBytes(plain);const b64len=Math.ceil(n/3)*4;return b64len}
-      function tryQR(version,ecc,len){const s='H'.repeat(len);try{const q=qrcode(version,ecc);q.addData(s);q.make();return true}catch(e){return false}}
-      function maxPlainFor(version,ecc){let lo=2,hi=2048;while(tryQR(version,ecc,payloadLenForPlain(hi))&&hi<8192)hi*=2;if(!tryQR(version,ecc,payloadLenForPlain(lo)))return -1;while(lo<hi){const mid=Math.min(hi-1,lo+Math.floor((hi-lo)/2));if(tryQR(version,ecc,payloadLenForPlain(mid)))lo=mid+1;else hi=mid}return lo-1}
+      function tryQR(version,ecc,len){const s=new Uint8Array(len);s.fill(65);let str='';for(let i=0;i<s.length;i++)str+=String.fromCharCode(s[i]);try{const q=qrcode(version,ecc);q.addData(str,'Byte');q.make();return true}catch(e){return false}}
+      function maxPlainFor(version,ecc){let lo=2,hi=8192;while(tryQR(version,ecc,hi)&&hi<8192)hi*=2;if(!tryQR(version,ecc,lo))return -1;while(lo<hi){const mid=Math.min(hi-1,lo+Math.floor((hi-lo)/2));if(tryQR(version,ecc,mid))lo=mid+1;else hi=mid}return lo-1}
       function statsReset(){document.getElementById('sBlock').textContent='—';document.getElementById('sTotal').textContent='—';document.getElementById('sChars').textContent='—';}
-      function statsApply(version,ecc,plain){const blockPlain=plain-2;document.getElementById('sBlock').textContent=blockPlain+' bytes';document.getElementById('sTotal').textContent=(BLOCKS*blockPlain)+' bytes';document.getElementById('sChars').textContent=payloadLenForPlain(plain)+' chars'}
+      function statsApply(version,ecc,cap){document.getElementById('sBlock').textContent=cap+' bytes cap';document.getElementById('sTotal').textContent=cap+' bytes';document.getElementById('sChars').textContent=Math.ceil(cap/3)*4+' chars'}
 
       const eccEl=document.getElementById('ecc'),verEl=document.getElementById('ver');
       [eccEl,verEl].forEach(el=>el.addEventListener('change',()=>{const verSel=verEl.value;document.getElementById('sVer').textContent=verSel==='auto'?'Auto':String(verSel);statsReset()}));
@@ -1066,16 +1058,89 @@
       const btnToggleRaw=document.getElementById('btnToggleRaw');
 
       function utf8len(s){return te.encode(s||'').length}
-      function desiredPlainFromSecrets(s1,s2,s3){const L=Math.max(utf8len(s1),utf8len(s2),utf8len(s3));return Math.max(2,Math.min(MAX_PLAIN_CAP,2+L))}
-      function pickAutoVersionAndPlain(ecc,desiredPlain){for(let v=15;v<=40;v++){const cap=maxPlainFor(v,ecc);if(cap>=2 && desiredPlain<=cap){return {version:v,plain:cap}}}const cap40=maxPlainFor(40,ecc);if(cap40<2)throw new Error('Does not fit even in v40');return {version:40,plain:Math.min(MAX_PLAIN_CAP,cap40)}}
+      function calcOverhead(layerCount) { return layerCount * (SALT_SIZE + NONCE_SIZE + TAG_SIZE); }
+      function truncateToUTF8Bytes(str, maxBytes) {
+        let u8 = te.encode(str);
+        if (u8.length <= maxBytes) return str;
+        u8 = u8.slice(0, maxBytes);
+        // Ensure we don't slice multi-byte UTF-8 characters midway
+        while (u8.length > 0 && (u8[u8.length - 1] & 0xC0) === 0x80) u8 = u8.slice(0, u8.length - 1);
+        if (u8.length > 0 && (u8[u8.length - 1] & 0xC0) === 0xC0) u8 = u8.slice(0, u8.length - 1);
+        return td.decode(u8);
+      }
 
-      async function buildBlock(secret,pass,PLAIN_SIZE){const salt=rnd(SALT_SIZE),nonce=rnd(NONCE_SIZE);let keyBytes;if(pass&&pass.length){keyBytes=await kdf(pass,salt)}else{keyBytes=rnd(32)}const key=await aesImport(keyBytes);const enc=padPlain(te.encode(secret||''),PLAIN_SIZE);const ct=await aesEnc(key,nonce,enc.buf);return {salt,nonce,ct,cut:enc.cut,from:enc.from}}
-      async function generateContainerDynamic(secrets,passes,PLAIN_SIZE){const blocks=[];let cuts=[];for(let i=0;i<BLOCKS;i++){const b=await buildBlock(secrets[i],passes[i],PLAIN_SIZE);blocks.push(b);cuts.push({i,cut:b.cut,from:b.from})}shuffle(blocks);const total=containerSizeBytes(PLAIN_SIZE);const out=new Uint8Array(total);let off=0;for(const b of blocks){out.set(b.salt,off);off+=SALT_SIZE;out.set(b.nonce,off);off+=NONCE_SIZE;out.set(b.ct,off);off+=PLAIN_SIZE+TAG_SIZE}return {bin:out,cuts}}
+      function desiredCapFromActivePairs(secrets, passes) {
+        let total = 0;
+        let count = 0;
+        for (let i = 0; i < secrets.length; i++) {
+          if (passes[i]) {
+            total += utf8len(secrets[i] || '') + 2; // +2 for length header
+            count++;
+          }
+        }
+        if (count === 0) return 64; // arbitrary minimum capacity
+        return total + calcOverhead(count);
+      }
+      function pickAutoVersionAndPlain(ecc,desiredCap){for(let v=15;v<=40;v+=5){const cap=maxPlainFor(v,ecc);if(cap>=desiredCap){return {version:v,plain:cap}}}const cap40=maxPlainFor(40,ecc);return {version:40,plain:cap40}}
 
-      function makeQRFixed(version,ecc,data){const qr=qrcode(version,ecc);qr.addData(data);qr.make();return qr}
+      async function generateNestedContainer(secrets, passes, MAX_CAP) {
+        const layers = [];
+        for (let i = 0; i < secrets.length; i++) {
+          if (passes[i]) { layers.push({secret: secrets[i], pass: passes[i]}); }
+        }
+
+        // Reverse order so innermost secret is encrypted first
+        layers.reverse();
+
+        let currentPayload = rnd(0);
+
+        // To precisely reach MAX_CAP after all nested layers are encrypted, the innermost layer
+        // must be padded. Each layer adds (SALT_SIZE + NONCE_SIZE + TAG_SIZE) overhead.
+        // It also adds (2 + secBytes.length) for its own plaintext payload.
+        let outerPayloadSize = 0;
+        for (let i = 1; i < layers.length; i++) {
+          outerPayloadSize += 2 + te.encode(layers[i].secret || '').length;
+        }
+
+        for (let i = 0; i < layers.length; i++) {
+          const { secret, pass } = layers[i];
+          const secBytes = te.encode(secret || '');
+          const lenPrefix = u16(secBytes.length);
+
+          let plainData;
+          if (i === 0) {
+             // Innermost layer: Pad to exactly fill the remaining required space
+             const totalOverheads = calcOverhead(layers.length);
+             const neededLen = MAX_CAP - totalOverheads - outerPayloadSize;
+             const padLen = neededLen - (2 + secBytes.length);
+             if (padLen < 0) throw new Error("Data exceeds max capacity");
+             const padding = rnd(padLen);
+             plainData = concat([lenPrefix, secBytes, padding]);
+          } else {
+             // Outer layers: Append the encrypted payload of the previous inner layer
+             plainData = concat([lenPrefix, secBytes, currentPayload]);
+          }
+
+          const salt = rnd(SALT_SIZE);
+          const nonce = rnd(NONCE_SIZE);
+          const keyBytes = await kdf(pass, salt);
+          const key = await aesImport(keyBytes);
+          const ct = await aesEnc(key, nonce, plainData);
+
+          currentPayload = concat([salt, nonce, ct]);
+        }
+
+        if (layers.length === 0) {
+           return { bin: rnd(MAX_CAP), cuts: [] };
+        }
+
+        return { bin: currentPayload, cuts: [] };
+      }
+
+      function makeQRFixed(version,ecc,data){const qr=qrcode(version,ecc);let str='';for(let i=0;i<data.length;i++)str+=String.fromCharCode(data[i]);qr.addData(str,'Byte');qr.make();return qr}
       function renderQR(qr){const svg=qr.createSvgTag({cellSize:4,margin:4});document.getElementById('qrOut').innerHTML=svg}
 
-      function randSuffix(n){const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let s='';const a=new Uint8Array(n);crypto.getRandomValues(a);for(let i=0;i<n;i++)s+=chars[a[i]%chars.length];return s}
+      function randSuffix(n){const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let s='';const max=Math.floor(256/chars.length)*chars.length;const a=new Uint8Array(1);for(let i=0;i<n;i++){do{crypto.getRandomValues(a)}while(a[0]>=max);s+=chars[a[0]%chars.length];}return s}
 
       async function exportQRasPNG(returnBlob = false) {
         const svg = document.querySelector('#qrOut svg');
@@ -1298,9 +1363,62 @@
 
 
 
-      function parseContainer(u8){let off=0;const perBlockLen=u8.length/BLOCKS;const ctLen=perBlockLen-(SALT_SIZE+NONCE_SIZE);if(ctLen<0||u8.length%BLOCKS!==0)throw new Error('bad len');const blocks=[];for(let i=0;i<BLOCKS;i++){const salt=u8.slice(off,off+SALT_SIZE);off+=SALT_SIZE;const nonce=u8.slice(off,off+NONCE_SIZE);off+=NONCE_SIZE;const ct=u8.slice(off,off+ctLen);off+=ctLen;blocks.push({salt,nonce,ct})}return {blocks}}
-      async function tryDecryptAll(container,passes){const out=[];for(const pass of passes){if(!pass){out.push('(not decrypted)');continue}let found=false;for(const b of container.blocks){try{const keyBytes=await kdf(pass,b.salt);const key=await aesImport(keyBytes);const pt=await aesDec(key,b.nonce,b.ct);const data=unpadPlain(pt);out.push(td.decode(data));found=true;break}catch(e){}}if(!found)out.push('(not decrypted)')}return out}
-      function renderDecoded(list){const out=document.getElementById('decOut');out.innerHTML='';list.forEach((v,i)=>{const item=document.createElement('div');item.className='secret';const head=document.createElement('div');head.className='secretHead';const title=document.createElement('div');title.textContent='Secret '+String.fromCharCode(65+i);const btn=document.createElement('button');btn.className='btn secondary small';btn.textContent='📋 Копировать';btn.onclick=()=>navigator.clipboard.writeText(v);head.appendChild(title);head.appendChild(btn);const body=document.createElement('div');body.className='mono';body.textContent=v;item.appendChild(head);item.appendChild(body);out.appendChild(item);const sep=document.createElement('div');sep.style.height='8px';out.appendChild(sep)});if(!list.length){out.textContent=''}}
+      async function decryptLayers(bin, passes) {
+        const out = [];
+        let currentPayload = bin;
+
+        // Ensure we iterate all available passwords exactly once per layer.
+        // We do not stop early to try to mask timing, though an analyst
+        // with the code knows we only iterate deep until failure.
+        // However, we MUST stop at 3 layers (or max possible).
+        for (let attempt = 0; attempt < 3; attempt++) {
+           if (!currentPayload || currentPayload.length <= SALT_SIZE + NONCE_SIZE + TAG_SIZE) {
+               break; // Reached the end or random padding
+           }
+
+           let layerDecrypted = false;
+
+           for (const pass of passes) {
+              if (!pass) continue;
+
+              try {
+                const salt = currentPayload.slice(0, SALT_SIZE);
+                const nonce = currentPayload.slice(SALT_SIZE, SALT_SIZE + NONCE_SIZE);
+                const ct = currentPayload.slice(SALT_SIZE + NONCE_SIZE);
+
+                const keyBytes = await kdf(pass, salt);
+                const key = await aesImport(keyBytes);
+
+                const pt = await aesDec(key, nonce, ct);
+
+                // Parse the length prefix (first 2 bytes)
+                const lenPrefix = new DataView(pt.buffer, pt.byteOffset, 2).getUint16(0, false);
+
+                if (lenPrefix > pt.length - 2) throw new Error("Invalid unpadded length"); // Prevent out of bounds
+
+                const data = pt.slice(2, 2 + lenPrefix);
+                out.push(td.decode(data));
+
+                // The remainder of the plaintext becomes the payload for the next inner layer
+                currentPayload = pt.slice(2 + lenPrefix);
+                layerDecrypted = true;
+                break; // We successfully decrypted a layer with this pass, proceed to next inner layer
+
+              } catch(e) {
+                // Ignore decryption failures, wrong password
+              }
+           }
+
+           if (!layerDecrypted) {
+               // None of the provided passwords could open this layer.
+               // It's either the end (random noise) or the user withheld passwords.
+               break;
+           }
+        }
+
+        return out.length ? out : ['(No secrets decrypted)'];
+      }
+      function renderDecoded(list){const out=document.getElementById('decOut');out.innerHTML='';list.forEach((v,i)=>{const item=document.createElement('div');item.className='secret';const head=document.createElement('div');head.className='secretHead';const title=document.createElement('div');title.textContent='Secret '+String.fromCharCode(65+i);const btn=document.createElement('button');btn.className='btn secondary small';btn.textContent='📋 Copy';btn.onclick=()=>navigator.clipboard.writeText(v);head.appendChild(title);head.appendChild(btn);const body=document.createElement('div');body.className='mono';body.textContent=v;item.appendChild(head);item.appendChild(body);out.appendChild(item);const sep=document.createElement('div');sep.style.height='8px';out.appendChild(sep)});if(!list.length){out.textContent=''}}
 
       function vibrate(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
       function wave(){const w=document.getElementById('wave');w.classList.add('waveShow');setTimeout(()=>w.classList.remove('waveShow'),700)}
@@ -1309,10 +1427,10 @@
       function maskedBase64Preview(){if(!lastBase64)return '';const tail=lastBase64.slice(-10);return '…'+tail}
       function renderBlob(metaText,cutInfo){
         const lines=[];
-        if(showRaw && lastPayload){lines.push(lastPayload)}
-        else if(lastBase64){lines.push(maskedBase64Preview())}
+        if(showRaw && window.lastPayload){lines.push(window.lastPayload)}
+        else if(window.lastBase64){lines.push(maskedBase64Preview())}
         if(metaText)lines.push('',metaText);
-        if(cutInfo && cutInfo.length){lines.push('Truncation:');for(const l of cutInfo)lines.push(l)}
+        if(cutInfo && cutInfo.length){lines.push('⚠️ WARNING: Data exceeded QR capacity! Truncation applied:');for(const l of cutInfo)lines.push(l)}
         blobDiv.textContent=lines.join('\n');
         btnToggleRaw.textContent=showRaw?'🙈 Hide':'👁️ Show';
       }
@@ -1351,38 +1469,85 @@
         await new Promise(r=>requestAnimationFrame(r));
         await new Promise(r=>requestAnimationFrame(r));
         try{
-          const s1=secrets[0].value.trim(), s2=secrets[1].value.trim(), s3=secrets[2].value.trim();
-          const p1=passwords[0].value, p2=passwords[1].value, p3=passwords[2].value;
-          let desiredPlain=desiredPlainFromSecrets(s1,s2,s3);
-          let version,PLAIN_SIZE;
+          let s1=secrets[0].value.trim(), s2=secrets[1].value.trim(), s3=secrets[2].value.trim();
+          let p1=passwords[0].value, p2=passwords[1].value, p3=passwords[2].value;
+
+          let rawSecrets = [s1, s2, s3];
+          let passes = [p1, p2, p3];
+          let desiredCap=desiredCapFromActivePairs(rawSecrets, passes);
+
+          let version,MAX_CAP;
           if(verSel==='auto'){
-            const pick=pickAutoVersionAndPlain(ecc,desiredPlain);
-            version=pick.version;PLAIN_SIZE=pick.plain;
+            const pick=pickAutoVersionAndPlain(ecc,desiredCap);
+            version=pick.version;MAX_CAP=pick.plain;
             document.getElementById('sVer').textContent='Auto→v'+version;
           }else{
             version=parseInt(verSel,10);
-            const cap=maxPlainFor(version,ecc);
-            if(cap<2)throw new Error('Does not fit in chosen QR version; increase version or enable Auto');
-            PLAIN_SIZE=Math.min(cap,MAX_PLAIN_CAP);
+            MAX_CAP=maxPlainFor(version,ecc);
+            if(MAX_CAP<1)throw new Error('Invalid QR version or ECC configuration');
             document.getElementById('sVer').textContent=String(version);
           }
-          statsApply(version,ecc,PLAIN_SIZE);
-          const res=await generateContainerDynamic([s1,s2,s3],[p1,p2,p3],PLAIN_SIZE);
-          const payload=toB64u(res.bin);
-          lastPayload=payload;lastBase64=payload;
-          const fits=tryQR(version,ecc,payload.length);
-          if(!fits)throw new Error('Does not fit in chosen QR version; increase version or enable Auto');
-          const qr=makeQRFixed(version,ecc,payload);renderQR(qr);
-          const blockPlain=PLAIN_SIZE-2;
-          let cutInfo=[];
-          const map=['A','B','C'];
-          for(let i=0;i<res.cuts.length;i++){
-            const c=res.cuts[i];
-            if(c.cut>0)cutInfo.push('Secret '+map[i]+': truncated '+c.cut+' bytes at position '+c.from);
+
+          let activeCount = passes.filter(p => !!p).length;
+          let availablePlaintextBytes = MAX_CAP - calcOverhead(activeCount);
+          if (availablePlaintextBytes < activeCount * 2) {
+             throw new Error("QR Version too small to even store headers for this many secrets.");
           }
-          const meta='QR version: '+document.getElementById('sVer').textContent+' | ECC: '+ecc+' | Block: '+blockPlain+' bytes';
+
+          availablePlaintextBytes -= activeCount * 2; // Subtract header bytes
+
+          // Water-filling Truncation Allocation
+          let finalSecrets = [...rawSecrets];
+          let cutInfo = [];
+          if (desiredCap > MAX_CAP) {
+            let activeIndices = [];
+            for (let i = 0; i < 3; i++) {
+               if (passes[i]) activeIndices.push(i);
+            }
+
+            // Sort indices by the byte length of their secrets (smallest to largest)
+            activeIndices.sort((a, b) => utf8len(rawSecrets[a]) - utf8len(rawSecrets[b]));
+
+            let remainingSpace = availablePlaintextBytes;
+            let remainingSlots = activeCount;
+
+            for (let idx of activeIndices) {
+              let fairShare = Math.floor(remainingSpace / remainingSlots);
+              let sLen = utf8len(rawSecrets[idx]);
+
+              if (sLen <= fairShare) {
+                 // Secret fits entirely within its fair share
+                 remainingSpace -= sLen;
+              } else {
+                 // Secret is larger than fair share. It gets truncated to fair share.
+                 let truncatedStr = truncateToUTF8Bytes(rawSecrets[idx], fairShare);
+                 let actualTruncatedLen = utf8len(truncatedStr);
+                 finalSecrets[idx] = truncatedStr;
+                 remainingSpace -= actualTruncatedLen;
+
+                 cutInfo.push(`Secret ${String.fromCharCode(65+idx)}: truncated to ${actualTruncatedLen} bytes.`);
+              }
+              remainingSlots--;
+            }
+          }
+
+          statsApply(version,ecc,MAX_CAP);
+          const res=await generateNestedContainer(finalSecrets, passes, MAX_CAP);
+
+          // Use raw binary for the QR code, but keep base64 for copy-pasting
+          const b64Payload = toB64u(res.bin);
+          window.lastPayload = b64Payload;
+          window.lastBase64 = b64Payload;
+
+          const fits=tryQR(version,ecc,MAX_CAP);
+          if(!fits)throw new Error('Does not fit in chosen QR version; increase version or enable Auto');
+
+          const qr=makeQRFixed(version,ecc,res.bin); // Pass raw binary!
+          renderQR(qr);
+
+          const meta='QR version: '+document.getElementById('sVer').textContent+' | ECC: '+ecc+' | Capacity: '+MAX_CAP+' bytes';
           renderBlob(meta,cutInfo);
-        }catch(e){blobDiv.textContent='Error: '+e.message}
+        }catch(e){blobDiv.textContent='Error: '+e.message; console.error(e);}
         finally{qrSpin.classList.remove('show')}
         } finally {
           qrSpin.style.display = 'none';
@@ -1395,7 +1560,14 @@
       const passwords = [document.getElementById('pwd1'), document.getElementById('pwd2'), document.getElementById('pwd3')];
       secrets.concat(passwords).forEach(el=>el.addEventListener('input',()=>{if(el.value.trim()) el.classList.remove('error')}));
 
-      btnToggleRaw.onclick=()=>{if(!lastBase64)return;showRaw=!showRaw;renderBlob();};
+      btnToggleRaw.onclick=()=>{if(!window.lastBase64)return;showRaw=!showRaw;renderBlob();};
+      btnCopy.onclick = () => {
+        if (!window.lastBase64) return;
+        navigator.clipboard.writeText(window.lastBase64);
+        const oldText = btnCopy.textContent;
+        btnCopy.textContent = '✅ Copied';
+        setTimeout(() => { btnCopy.textContent = oldText; }, 1500);
+      };
       btnSave.onclick = async () => {
         const svg = document.querySelector('#qrOut svg');
         if (!svg) return;
@@ -1488,8 +1660,8 @@
           const img=getFrameImageData();
           if(img){
             const res=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-            if(res&&res.data){
-              document.getElementById('scanText').value=res.data;
+            if(res&&res.binaryData){
+              document.getElementById('scanText').value=toB64u(res.binaryData);
               vibrate(150);
               if(!camDet){
                 camDet=true;
@@ -1518,6 +1690,21 @@
         drop.addEventListener('drop',e=>{const items=e.dataTransfer&&e.dataTransfer.files;if(items&&items.length)processFiles(items)});
       }
       fileIn.onchange=e=>{const f=e.target.files;if(f&&f.length)processFiles(f)};
+
+      document.addEventListener('paste', e => {
+        // Only process pastes when we are on the decrypt tab
+        if (!document.getElementById('dec').classList.contains('active')) return;
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        const files = [];
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) files.push(file);
+          }
+        }
+        if (files.length) processFiles(files);
+      });
 
       async function imageToImageData(file){
         const url=URL.createObjectURL(file);
@@ -1550,7 +1737,7 @@
               const img=await imageToImageData(f);
               if(!img)continue;
               const res=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-              if(res&&res.data){scanOut.value=res.data;break}
+              if(res&&res.binaryData){scanOut.value=toB64u(res.binaryData);break}
             }catch(e){}
           }
           if(!scanOut.value)scanOut.value='No QR found';
@@ -1566,9 +1753,8 @@
         const s=document.getElementById('scanText').value.trim();decSpin.classList.add('show');renderDecoded([]);
         try{
           const bin=fromB64u(s);
-          const cont=parseContainer(bin);
           const p1=document.getElementById('dpwd1').value,p2=document.getElementById('dpwd2').value,p3=document.getElementById('dpwd3').value;
-          const res=await tryDecryptAll(cont,[p1,p2,p3]);
+          const res=await decryptLayers(bin,[p1,p2,p3]);
           renderDecoded(res);
         }catch(e){renderDecoded(['Error: '+e.message])}finally{decSpin.classList.remove('show')}
       };
