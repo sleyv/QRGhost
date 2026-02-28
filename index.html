@@ -1029,7 +1029,7 @@
       async function aesImport(keyBytes){return await crypto.subtle.importKey('raw',keyBytes,{name:'AES-GCM'},false,['encrypt','decrypt'])}
       async function aesEnc(key,nonce,plain){const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,plain);return new Uint8Array(ct)}
       async function aesDec(key,nonce,ct){const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:nonce,tagLength:128},key,ct);return new Uint8Array(pt)}
-      function tryQR(version,ecc,len){const s=new Uint8Array(len);s.fill(65);let str='';for(let i=0;i<s.length;i++)str+=String.fromCharCode(s[i]);try{const q=qrcode(version,ecc);q.addData(str,'Byte');q.make();return true}catch(e){return false}}
+      function tryQR(version,ecc,len){const str='A'.repeat(len);try{const q=qrcode(version,ecc);q.addData(str,'Byte');q.make();return true}catch(e){return false}}
       function maxPlainFor(version,ecc){let lo=2,hi=8192;while(tryQR(version,ecc,hi)&&hi<8192)hi*=2;if(!tryQR(version,ecc,lo))return -1;while(lo<hi){const mid=Math.min(hi-1,lo+Math.floor((hi-lo)/2));if(tryQR(version,ecc,mid))lo=mid+1;else hi=mid}return lo-1}
       function statsReset(){document.getElementById('sBlock').textContent='—';document.getElementById('sTotal').textContent='—';document.getElementById('sChars').textContent='—';}
       function statsApply(version,ecc,cap){document.getElementById('sBlock').textContent=cap+' bytes cap';document.getElementById('sTotal').textContent=cap+' bytes';document.getElementById('sChars').textContent=Math.ceil(cap/3)*4+' chars'}
