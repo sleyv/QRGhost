@@ -1352,6 +1352,8 @@
 
 
       async function decryptLayers(bin, passes) {
+        // Deduplicate passwords to prevent redundant Argon2 KDF hashes which can cause Out-Of-Memory errors
+        passes = [...new Set(passes.filter(p => !!p))];
         const out = [];
         let currentPayload = bin;
 
@@ -1367,8 +1369,6 @@
            let layerDecrypted = false;
 
            for (const pass of passes) {
-              if (!pass) continue;
-
               try {
                 const salt = currentPayload.slice(0, SALT_SIZE);
                 const nonce = currentPayload.slice(SALT_SIZE, SALT_SIZE + NONCE_SIZE);
