@@ -965,39 +965,27 @@
         </div>
 
         <p style="margin:10px 0;">
-          <strong>What:</strong> Packs up to 3 Secrets into one encrypted QR
-          container; each Secret uses its own password.
+          <strong>What is this?:</strong> A secure, plausible-deniability focused data vault. It packs up to 3 secrets into a single QR code using a TrueCrypt-style <em>nested hidden volume</em> architecture.
         </p>
 
         <p style="margin:10px 0;">
-          <strong>Encrypt:</strong> Provide Secret + Password pairs (≥1), then
-          click <em>Generate QR</em>. Masked Base64 and stats are shown.
+          <strong>How Deniability Works:</strong> Secrets are encrypted like an onion. The innermost layer (e.g., your Real Seed) is padded with perfect cryptographic noise to exactly fill the QR code. The outer layer (e.g., your Distress Seed) wraps around it. An attacker cannot prove the inner layer exists; it looks identical to random padding.
         </p>
 
         <p style="margin:10px 0;">
-          <strong>Decrypt:</strong> Paste Base64 or scan / upload an image,
-          enter passwords, then click <em>Decrypt</em>. Each block is unlocked
-          independently.
+          <strong>Encrypt:</strong> Provide at least 1 Secret + Password pair. The order matters! Outer secrets wrap inner ones. If you want maximum deniability, fill all 3 inputs.
         </p>
 
         <p style="margin:10px 0;">
-          <strong>Limits:</strong> Per‑block usable bytes are shown; long
-          secrets are truncated (and reported).
+          <strong>Decrypt:</strong> You can scan a code via camera, upload an image file, or simply <strong>paste (Ctrl+V) an image</strong> of the QR code directly into this page. Enter your passwords and click Decrypt to peel the onion layers.
         </p>
 
         <p style="margin:10px 0;">
-          <strong>Scan tips:</strong> For high QR versions or poor lighting,
-          prefer a phone scanner; camera capture will vibrate briefly.
-        </p>
-
-        <p style="margin:10px 0;">
-          <strong>Privacy:</strong> All work is local. Passwords ≤256
-          characters. Keep passwords and exported blobs safe.
+          <strong>Limits & Truncation:</strong> If your text is too big for the QR code, a "water-filling" algorithm will automatically and safely truncate it, ensuring small secrets survive while large secrets are truncated to fit the available space. A warning will appear if data is lost.
         </p>
 
         <p style="margin:10px 0 4px;">
-          <strong>Troubles:</strong> "No QR": try higher resolution / better
-          lighting or a phone app. "Does not fit": increase version or use Auto.
+          <strong>Privacy:</strong> All encryption (AES-GCM) and key derivation (Argon2id @ 96MiB) occurs locally in your browser. Nothing is ever sent to a server.
         </p>
       </div>
     </div>
