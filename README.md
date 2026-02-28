@@ -7,7 +7,7 @@ QRGhost is a secure, plausible-deniability focused QR code generator and data en
 ## ✨ Features
 
 - 🔒 **Absolute Plausible Deniability:** Store a distress seed and a real seed. Giving up the outer password reveals the distress seed, while the real seed remains perfectly disguised as cryptographically secure random noise.
-- 🧅 **Nested Hidden Volumes:** Encrypt data in up to 3 nested layers. You must decrypt the outer layer to access the ciphertext of the inner layer.
+- 🧅 **Nested Hidden Volumes:** Encrypt data in up to 3 nested layers. You must decrypt the outer layer to access the ciphertext of the inner layer. It is mathematically impossible to skip or bypass an outer layer to reach an inner secret without providing the outer password.
 - 📱 **Native Binary QR Codes:** Encodes data in raw 8-bit byte mode rather than Base64, maximizing the storage capacity of the QR code.
 - 🌊 **Smart Capacity Allocation:** Automatically selects the best QR version and uses a "water-filling" algorithm to safely truncate over-sized text to exactly fit the remaining capacity.
 - 📋 **Clipboard Integration:** Quickly decrypt by pasting (Ctrl+V) an image of a QR code directly into the Decrypt tab.

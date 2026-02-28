@@ -977,7 +977,7 @@
         </p>
 
         <p style="margin:10px 0;">
-          <strong>Decrypt:</strong> You can scan a code via camera, upload an image file, or simply <strong>paste (Ctrl+V) an image</strong> of the QR code directly into this page. Enter your passwords and click Decrypt to peel the onion layers.
+          <strong>Decrypt:</strong> You can scan a code via camera, upload an image file, or simply <strong>paste (Ctrl+V) an image</strong> of the QR code directly into this page. Enter your passwords and click Decrypt to peel the onion layers. <em>Important: Because the outer layers wrap the inner layers, you MUST provide the outer passwords to access any inner secrets.</em>
         </p>
 
         <p style="margin:10px 0;">
@@ -1385,6 +1385,8 @@
 
 
       async function decryptLayers(bin, passes) {
+        // Deduplicate passwords to prevent redundant Argon2 KDF hashes which can cause Out-Of-Memory errors
+        passes = [...new Set(passes.filter(p => !!p))];
         const out = [];
         let currentPayload = bin;
 
@@ -1400,8 +1402,6 @@
            let layerDecrypted = false;
 
            for (const pass of passes) {
-              if (!pass) continue;
-
               try {
                 const salt = currentPayload.slice(0, SALT_SIZE);
                 const nonce = currentPayload.slice(SALT_SIZE, SALT_SIZE + NONCE_SIZE);
@@ -1465,25 +1465,48 @@
         const passwords = [document.getElementById('pwd1'), document.getElementById('pwd2'), document.getElementById('pwd3')];
 
         let hasValidPair = false;
-        for(let i=0; i<3; i++) {
-          const secVal = secrets[i].value.trim();
-          const passVal = passwords[i].value.trim();
-          if(secVal.length > 0 && passVal.length > 0) { hasValidPair = true; break; }
-        }
+        let validationError = null;
 
         for(let i=0; i<3; i++) {
-          const secVal = secrets[i].value.trim();
-          const passVal = passwords[i].value.trim();
-          if(!hasValidPair) {
-            if(secVal.length === 0) secrets[i].classList.add('error'); else secrets[i].classList.remove('error');
-            if(passVal.length === 0) passwords[i].classList.add('error'); else passwords[i].classList.remove('error');
-          } else {
-            secrets[i].classList.remove('error');
-            passwords[i].classList.remove('error');
+          secrets[i].classList.remove('error');
+          passwords[i].classList.remove('error');
+        }
+
+        const isFilled = (i) => secrets[i].value.trim().length > 0 || passwords[i].value.trim().length > 0;
+        const isValidPair = (i) => secrets[i].value.trim().length > 0 && passwords[i].value.trim().length > 0;
+
+        if (isFilled(2) && !isFilled(1)) {
+          secrets[1].classList.add('error');
+          passwords[1].classList.add('error');
+          validationError = "Please fill Secret B before Secret C to preserve outer-layer integrity.";
+        }
+        if ((isFilled(1) || isFilled(2)) && !isFilled(0)) {
+          secrets[0].classList.add('error');
+          passwords[0].classList.add('error');
+          validationError = "Please fill Secret A first. Outer layers must exist to wrap inner layers.";
+        }
+
+        if (!validationError) {
+          for(let i=0; i<3; i++) {
+            if (isFilled(i)) {
+              if (!isValidPair(i)) {
+                if (secrets[i].value.trim().length === 0) secrets[i].classList.add('error');
+                if (passwords[i].value.trim().length === 0) passwords[i].classList.add('error');
+                validationError = "Both Secret and Password must be provided for a volume.";
+              } else {
+                hasValidPair = true;
+              }
+            }
           }
         }
 
-        if(!hasValidPair) { blobDiv.textContent = 'Please enter at least one Secret + Password pair'; return; }
+        if (!hasValidPair && !validationError) {
+          validationError = 'Please enter at least one Secret + Password pair';
+          secrets[0].classList.add('error');
+          passwords[0].classList.add('error');
+        }
+
+        if(validationError) { blobDiv.textContent = validationError; return; }
 
         const ecc=eccEl.value;const verSel=verEl.value;
         qrSpin.classList.add('show');blobDiv.textContent='';showRaw=false;
