@@ -1126,7 +1126,40 @@
       }
 
       function makeQRFixed(version,ecc,data){const qr=qrcode(version,ecc);let str='';for(let i=0;i<data.length;i++)str+=String.fromCharCode(data[i]);qr.addData(str,'Byte');qr.make();return qr}
-      function renderQR(qr){const svg=qr.createSvgTag({cellSize:4,margin:4});document.getElementById('qrOut').innerHTML=svg}
+      function renderQR(qr) {
+        const svgString = qr.createSvgTag({cellSize:4,margin:4});
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgString, 'image/svg+xml');
+
+        const allowedTags = new Set(['svg', 'path', 'rect', 'g']);
+        const allowedAttrs = new Set(['xmlns', 'viewbox', 'width', 'height', 'x', 'y', 'fill', 'd', 'transform', 'style', 'shape-rendering']);
+
+        function sanitizeNode(node) {
+          if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent);
+          if (node.nodeType !== Node.ELEMENT_NODE) return null;
+
+          const tag = node.tagName.toLowerCase();
+          if (!allowedTags.has(tag)) return null;
+
+          const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+          for (let attr of Array.from(node.attributes)) {
+            if (allowedAttrs.has(attr.name.toLowerCase())) {
+              el.setAttribute(attr.name, attr.value);
+            }
+          }
+
+          for (let child of Array.from(node.childNodes)) {
+            const safeChild = sanitizeNode(child);
+            if (safeChild) el.appendChild(safeChild);
+          }
+          return el;
+        }
+
+        const safeSvg = sanitizeNode(doc.documentElement);
+        const qrOut = document.getElementById('qrOut');
+        qrOut.innerHTML = '';
+        if (safeSvg) qrOut.appendChild(safeSvg);
+      }
 
       function randSuffix(n){const chars='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';let s='';const max=Math.floor(256/chars.length)*chars.length;const a=new Uint8Array(n);crypto.getRandomValues(a);let p=0;for(let i=0;i<n;i++){let v;do{if(p>=a.length){crypto.getRandomValues(a);p=0}v=a[p++];}while(v>=max);s+=chars[v%chars.length];}return s}
 
