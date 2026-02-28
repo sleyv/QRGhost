@@ -1,14 +1,17 @@
 # QRGhost 👻
 
-QRGhost is a secure, password-protected QR code generator and data encryption tool. It supports encryption of data in up to 3 blocks, allowing users to share encrypted information via QR codes. The application can be run locally or hosted on a server with HTTPS support.
+QRGhost is a secure, plausible-deniability focused QR code generator and data encryption tool. Utilizing a TrueCrypt-style nested hidden volume architecture ("onion encryption"), it allows users to encrypt up to 3 layers of secrets within a single QR code. The application perfectly pads the innermost secrets with CSPRNG noise to the maximum capacity of the QR version, making it mathematically impossible to prove the existence of hidden inner layers without the exact passwords.
 
 # [🚀 Live Demo](https://qrghost.sley.nl)
 
 ## ✨ Features
 
-- 🔒 Encrypt data with up to 3 separate passwords.
-- 📱 Generate QR codes from the encrypted data.
-- 📥 Download a self-contained `qrghost.html` file for easy, secure sharing and offline use.
+- 🔒 **Absolute Plausible Deniability:** Store a distress seed and a real seed. Giving up the outer password reveals the distress seed, while the real seed remains perfectly disguised as cryptographically secure random noise.
+- 🧅 **Nested Hidden Volumes:** Encrypt data in up to 3 nested layers. You must decrypt the outer layer to access the ciphertext of the inner layer.
+- 📱 **Native Binary QR Codes:** Encodes data in raw 8-bit byte mode rather than Base64, maximizing the storage capacity of the QR code.
+- 🌊 **Smart Capacity Allocation:** Automatically selects the best QR version and uses a "water-filling" algorithm to safely truncate over-sized text to exactly fit the remaining capacity.
+- 📋 **Clipboard Integration:** Quickly decrypt by pasting (Ctrl+V) an image of a QR code directly into the Decrypt tab.
+- 📥 **Self-Contained:** Download a single, portable `qrghost.html` file for easy, secure sharing and offline air-gapped use.
 - 🖥️ Works offline after first site visit (PWA).
 - 🚀 Multiple deployment options: standalone, Docker, or behind a reverse proxy.
 - 🌐 Can be hosted with any web server or library (Apache, Nginx, etc.).
