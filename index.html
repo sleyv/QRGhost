@@ -1005,7 +1005,7 @@
       }
     </style>
     <footer style="text-align:center; margin-top: 15px; padding-bottom: 25px; font-size: 14px; position: relative; z-index: 10;">
-      <a href="https://github.com/sleyv/QRGhost" target="_blank" class="footer-link">GitHub: sleyv/QRGhost</a>
+      <a href="https://github.com/sleyv/QRGhost" target="_blank" class="footer-link">GitHub: sleyv/QRGhost</a> <span style="color: var(--muted); opacity: 0.8; margin-left: 8px;">• v1.1</span>
     </footer>
 
     <script>
@@ -1605,9 +1605,22 @@
       secrets.concat(passwords).forEach(el=>el.addEventListener('input',()=>{if(el.value.trim()) el.classList.remove('error')}));
 
       btnToggleRaw.onclick=()=>{if(!window.lastBase64)return;showRaw=!showRaw;renderBlob();};
-      btnCopy.onclick = () => {
+      btnCopy.onclick = async () => {
         if (!window.lastBase64) return;
-        navigator.clipboard.writeText(window.lastBase64);
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(window.lastBase64);
+          } else {
+            throw new Error('Clipboard API not available');
+          }
+        } catch (err) {
+          const el = document.createElement('textarea');
+          el.value = window.lastBase64;
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+        }
         const oldText = btnCopy.textContent;
         btnCopy.textContent = '✅ Copied';
         setTimeout(() => { btnCopy.textContent = oldText; }, 1500);
