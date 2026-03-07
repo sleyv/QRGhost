@@ -15,8 +15,13 @@ async def check_certs(app, loop):
     if REVERSE_PROXY:
         logger.info("Running behind reverse proxy - SSL disabled")
         return
-    
-    if not (Path(CERTS_DIR).is_dir() and Path(f"{CERTS_DIR}/fullchain.pem").exists() and Path(f"{CERTS_DIR}/privkey.pem").exists()):
+
+    def has_certs():
+        return Path(CERTS_DIR).is_dir() and \
+               Path(f"{CERTS_DIR}/fullchain.pem").exists() and \
+               Path(f"{CERTS_DIR}/privkey.pem").exists()
+
+    if not await loop.run_in_executor(None, has_certs):
         logger.warning("!!! SSL certificates not found (fullchain.pem/privkey.pem in certs/).\nIgnore this if running on localhost or with reverse proxy certs")
 
 @app.get("/sw.js")
