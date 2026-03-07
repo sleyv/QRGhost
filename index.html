@@ -1413,6 +1413,7 @@
                 const pt = await aesDec(key, nonce, ct);
 
                 // Parse the length prefix (first 2 bytes)
+                if (pt.length < 2) throw new Error("Invalid unpadded length");
                 const lenPrefix = new DataView(pt.buffer, pt.byteOffset, 2).getUint16(0, false);
 
                 if (lenPrefix > pt.length - 2) throw new Error("Invalid unpadded length"); // Prevent out of bounds
