@@ -14,3 +14,13 @@ def test_manifest():
     assert response.status == 200
     assert "application/json" in response.headers.get("Content-Type", "")
     assert '"name"' in response.text
+
+def test_icon_192():
+    _, response = app.test_client.get("/icon-192.png")
+    assert response.status == 200
+    assert "image/png" in response.headers.get("Content-Type", "")
+
+def test_icon_512():
+    _, response = app.test_client.get("/icon-512.png")
+    assert response.status == 200
+    assert "image/png" in response.headers.get("Content-Type", "")
