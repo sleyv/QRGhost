@@ -2,7 +2,7 @@
   <h1>QRGhost 👻</h1>
   <p><strong>Скрытые 3 тома → QR</strong></p>
 
-  [🇺🇸 In English](README.md) • [🌐 Live Demo](https://qrghost.sley.nl)
+  [HTML 📥](http://qrghost.sley.nl/download/) • [🌐 Live Demo](https://qrghost.sley.nl)
 
   <img src="https://img.shields.io/badge/Docker-Ready-blue?style=flat&logo=docker" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/AI-Assisted-purple?style=flat" alt="AI Assisted" />
