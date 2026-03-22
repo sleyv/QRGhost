@@ -99,9 +99,11 @@
 
       .brand{
         display:flex;
-        flex-wrap:wrap;
+        flex-direction: column;
         align-items:center;
-        gap:10px;
+        justify-content: center;
+        text-align: center;
+        gap:15px;
       }
 
       .brand .sep{opacity:.7}
@@ -110,7 +112,7 @@
         display:flex;
         gap:10px;
         align-items:center;
-        margin-left:auto;
+        justify-content: center;
       }
 
       .brandActions .btn{
@@ -204,7 +206,8 @@
         display:grid;
         grid-template-columns:1.1fr .9fr;
         gap:12px;
-        margin-bottom:12px;
+        max-width: 800px;
+        margin: 0 auto 12px auto;
         position:relative;
         z-index:1;
       }
@@ -636,7 +639,12 @@
         .row{grid-template-columns:1fr}
         .btn.ok{width:100%;font-size:15px}
         .actionbtn{width:100%;font-size:17px}
-        .brandActions{width:100%;margin-left:0;justify-content:stretch}
+        .brandActions{
+        display:flex;
+        gap:10px;
+        align-items:center;
+        justify-content: center;
+      }
         .brandActions .btn{flex:1 1 50%}
         .camGrid{grid-template-columns:1fr}
         .camRight{justify-content:stretch}
@@ -658,18 +666,20 @@
   <body>
     <div class="scanlines"></div>
     <div class="wrapper">
-      <h1 class="brand" id="brand">
-        <span class="ghost" id="ghost" aria-label="ghost" role="img">👻</span>
-        <span class="g" data-text="QRGhost">QRGhost</span>
-        <span class="sep">•</span>
-        <span class="subtitle">Hidden 3 Volumes → QR</span>
+      <div class="brand" id="brand">
+        <h1 style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 0;">
+          <span class="ghost" id="ghost" aria-label="ghost" role="img">👻</span>
+          <span class="g" data-text="QRGhost">QRGhost</span>
+          <span class="sep">•</span>
+          <span class="subtitle">Hidden 3 Volumes → QR</span>
+        </h1>
         <div class="brandActions">
           <a class="btn secondary" id="btnDL" href="#" download="qrghost.html"
             >📥 HTML</a
           >
           <button class="btn secondary" id="btnFAQ">❓ FAQ</button>
         </div>
-      </h1>
+      </div>
       <div class="actionbar">
         <button id="goEnc" class="actionbtn active">🔐 Encrypt</button>
         <button id="goDec" class="actionbtn">📷 Decrypt</button>
