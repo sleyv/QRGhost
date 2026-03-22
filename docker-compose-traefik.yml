@@ -13,11 +13,11 @@ services:
       - default
       - traefik_default
     volumes:
-      - ./index.html:/usr/share/nginx/html/index.html:ro
-      - ./manifest.json:/usr/share/nginx/html/manifest.json:ro
-      - ./sw.js:/usr/share/nginx/html/sw.js:ro
-      - ./icon-192.png:/usr/share/nginx/html/icon-192.png:ro
-      - ./icon-512.png:/usr/share/nginx/html/icon-512.png:ro
+      - ./public/index.html:/usr/share/nginx/html/index.html:ro
+      - ./public/manifest.json:/usr/share/nginx/html/manifest.json:ro
+      - ./public/sw.js:/usr/share/nginx/html/sw.js:ro
+      - ./public/icon-192.png:/usr/share/nginx/html/icon-192.png:ro
+      - ./public/icon-512.png:/usr/share/nginx/html/icon-512.png:ro
 
     restart: unless-stopped
 networks:

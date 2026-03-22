@@ -2,7 +2,7 @@
 # to your existing Caddyfile instead of running this container:
 #
 # qrghost.your.domain {
-#     root * /path/to/qrghost/files
+#     root * /path/to/qrghost/public
 #     file_server
 # }
 #
@@ -16,11 +16,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./index.html:/srv/index.html:ro
-      - ./manifest.json:/srv/manifest.json:ro
-      - ./sw.js:/srv/sw.js:ro
-      - ./icon-192.png:/srv/icon-192.png:ro
-      - ./icon-512.png:/srv/icon-512.png:ro
+      - ./public/index.html:/srv/index.html:ro
+      - ./public/manifest.json:/srv/manifest.json:ro
+      - ./public/sw.js:/srv/sw.js:ro
+      - ./public/icon-192.png:/srv/icon-192.png:ro
+      - ./public/icon-512.png:/srv/icon-512.png:ro
       - caddy_data:/data
       - caddy_config:/config
     command: caddy file-server --domain qrghost.your.domain

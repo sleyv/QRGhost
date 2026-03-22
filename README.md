@@ -46,7 +46,7 @@ cd QRGhost
 
 You can use QRGhost without any installation.
 1. Download the `qrghost.html` file from the [Live Demo](https://qrghost.sley.nl) site by clicking the `📥 HTML` button.
-2. Alternatively, use the `index.html` file from this repository.
+2. Alternatively, use the `index.html` file from the `public` folder in this repository.
 3. Open the file directly in your web browser.
 </details>
 
@@ -106,7 +106,7 @@ Caddy is an excellent option for production as it automatically provisions and r
 
 The `index.html` file can be hosted with any web server or static file hosting service that supports HTTPS.
 
-1. Upload the static files (`index.html`, `manifest.json`, `sw.js`, icons) to your web server.
+1. Upload the static files from the `public` folder (`index.html`, `manifest.json`, `sw.js`, icons) to your web server.
 2. Configure HTTPS using your preferred method (Let's Encrypt, Cloudflare, etc.).
 3. Access the app via your HTTPS domain.
 </details>
