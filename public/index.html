@@ -65,12 +65,14 @@
         letter-spacing:.2px;
         -webkit-tap-highlight-color:transparent;
         overflow-x:hidden;
+      }
+
+      button, .btn, .actionbtn, .brand, .badge, label, .camSelect {
         user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
       }
-
 
       html, body {
         height: 100%;
@@ -638,7 +640,6 @@
       /* Responsive */
       @media (max-width:980px){
         .grid{grid-template-columns:1fr}
-        .actionbar{grid-template-columns:1fr}
         .qrbox{min-height:240px}
         .wrapper{
           padding-left:max(10px,env(safe-area-inset-left));
@@ -650,23 +651,28 @@
         .subtitle{font-size:13px}
         .row{grid-template-columns:1fr}
         .btn.ok{width:100%;font-size:15px}
-        .actionbtn{width:100%;font-size:17px}
+        .actionbar{
+          grid-template-columns:1fr 1fr;
+          gap:8px;
+        }
+        .actionbtn{
+          width:100%;
+          font-size:14px;
+          padding:12px;
+          gap:6px;
+        }
         .brandActions{width:100%;margin-left:0;justify-content:stretch}
         .brandActions .btn{flex:1 1 50%}
         .camGrid{grid-template-columns:1fr}
         .camRight{justify-content:stretch}
         .flex{flex-direction:column}
-
+        .footer-section { padding-bottom: 10px !important; margin-top: 5px !important; }
       }
 
       input[type="text"],
       input[type="password"],
       textarea,
       select {
-        user-select: auto;
-        -webkit-user-select: auto;
-        -moz-user-select: auto;
-        -ms-user-select: auto;
       }
       .main-content {
         margin-top: max(4vh, 20px);
@@ -825,10 +831,10 @@
               </div>
             </div>
             <div class="section stats">
-              <div class="stat">Version: <b id="sVer">Auto</b></div>
-              <div class="stat">Usable bytes / block: <b id="sBlock">—</b></div>
-              <div class="stat">Total usable: <b id="sTotal">—</b></div>
-              <div class="stat">QR payload chars: <b id="sChars">—</b></div>
+              <div class="stat">Ver: <b id="sVer">Auto</b></div>
+              <div class="stat">Bytes/block: <b id="sBlock">—</b></div>
+              <div class="stat">Total bytes: <b id="sTotal">—</b></div>
+              <div class="stat">Payload chars: <b id="sChars">—</b></div>
             </div>
             <div class="section flex">
               <button class="btn ok" id="btnGen">🔐 Generate QR</button>
@@ -883,38 +889,8 @@
               <div class="badge">🧪 Decoding</div>
             </div>
 
-            <div class="section camControls">
-              <input
-                type="file"
-                id="fileIn"
-                accept="image/*"
-                multiple
-                style="display:none"
-              />
-              <div class="camGrid">
-                <button class="btn pickBtn" id="btnPick">
-                  🖼️ Choose photo
-                </button>
-                <div class="camRight">
-                  <button class="btn secondary" id="btnCam">📷 Camera</button>
-                  <button class="btn ok" id="btnCamStop" style="display:none">
-                    ⏹️ Stop camera
-                  </button>
-                </div>
-                <div id="drop" class="drop gridFull">
-                  Drop image(s) with QR here — or paste (Ctrl+V)
-                </div>
-              </div>
-            </div>
-
-            <div class="videoWrap">
-              <video id="vid" class="video" playsinline></video>
-              <div id="camWave"></div>
-            </div>
-
-            <canvas id="canvas" style="display:none"></canvas>
             <div class="section">
-              <label>String from QR (detected)</label>
+              <label>String from QR</label>
               <textarea
                 id="scanText"
                 class="mono"
@@ -978,11 +954,35 @@
           </div>
 
           <div class="card qrwrap">
-            <div class="badge">ℹ️ Tips</div>
-            <div class="out">
-              If QR version ≥ 20, under difficult lighting it may be more
-              convenient to use a phone QR scanner app.
+            <div class="section camControls" style="margin-top: 0;">
+              <input
+                type="file"
+                id="fileIn"
+                accept="image/*"
+                multiple
+                style="display:none"
+              />
+              <div class="camGrid">
+                <button class="btn pickBtn" id="btnPick">
+                  🖼️ Choose photo
+                </button>
+                <div class="camRight">
+                  <button class="btn secondary" id="btnCam">📷 Camera</button>
+                  <button class="btn ok" id="btnCamStop" style="display:none">
+                    ⏹️ Stop camera
+                  </button>
+                </div>
+                <div id="drop" class="drop gridFull">
+                  Drop image(s) with QR here — or paste (Ctrl+V)
+                </div>
+              </div>
             </div>
+
+            <div class="videoWrap">
+              <video id="vid" class="video" playsinline></video>
+              <div id="camWave"></div>
+            </div>
+            <canvas id="canvas" style="display:none"></canvas>
           </div>
         </div>
         <div class="footer">
@@ -991,7 +991,7 @@
         </div>
       </div>
       </main>
-      <footer class="footer-section" style="text-align:center; padding-bottom: 25px; font-size: 14px; position: relative; z-index: 10; margin-top: 15px;">
+      <footer class="footer-section" style="text-align:center; padding-bottom: 20px; font-size: 13px; position: relative; z-index: 10; margin-top: 10px;">
         <a href="https://github.com/sleyv/QRGhost" target="_blank" class="footer-link">GitHub: sleyv/QRGhost</a> <span style="color: var(--muted); opacity: 0.8; margin-left: 8px;">• v1.1</span>
       </footer>
     </div>
