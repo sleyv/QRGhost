@@ -1,27 +1,23 @@
 services:
   qrghost:
-    build: .
+    image: nginx:alpine
     container_name: qrghost
     labels:
       - traefik.enable=true
       - traefik.http.routers.qrghost.rule=Host(`qrghost.your.domain`)
       - traefik.http.routers.qrghost.entrypoints=websecure
       - traefik.http.routers.qrghost.tls=true
-      - traefik.http.services.qrghost.loadbalancer.server.port=8222
+      - traefik.http.services.qrghost.loadbalancer.server.port=80
       - traefik.docker.network=traefik_default
     networks:
       - default
       - traefik_default
     volumes:
-      - ./index.html:/app/index.html:ro
-      - ./manifest.json:/app/manifest.json:ro
-      - ./sw.js:/app/sw.js:ro
-      - ./icon-192.png:/app/icon-192.png:ro
-      - ./icon-512.png:/app/icon-512.png:ro
-    environment:
-      - BASE_DIR=/app
-      - PORT=8222
-      - REVERSE_PROXY=true
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./manifest.json:/usr/share/nginx/html/manifest.json:ro
+      - ./sw.js:/usr/share/nginx/html/sw.js:ro
+      - ./icon-192.png:/usr/share/nginx/html/icon-192.png:ro
+      - ./icon-512.png:/usr/share/nginx/html/icon-512.png:ro
 
     restart: unless-stopped
 networks:

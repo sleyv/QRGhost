@@ -1,19 +1,14 @@
 services:
   qrghost:
-    build: .
+    image: nginx:alpine
     container_name: qrghost
     ports:
-      - "8222:8222"
+      - "8222:80"
     volumes:
-      - ./certs:/certs:ro
-      - ./index.html:/app/index.html:ro
-      - ./manifest.json:/app/manifest.json:ro
-      - ./sw.js:/app/sw.js:ro
-      - ./icon-192.png:/app/icon-192.png:ro
-      - ./icon-512.png:/app/icon-512.png:ro
-    environment:
-      - BASE_DIR=/app
-      - CERTS_DIR=/certs
-      - PORT=8222
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./manifest.json:/usr/share/nginx/html/manifest.json:ro
+      - ./sw.js:/usr/share/nginx/html/sw.js:ro
+      - ./icon-192.png:/usr/share/nginx/html/icon-192.png:ro
+      - ./icon-512.png:/usr/share/nginx/html/icon-512.png:ro
     restart: unless-stopped
 

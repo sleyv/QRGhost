@@ -4,7 +4,6 @@
 
   [🇷🇺 На русском](README_ru.md) • [🌐 Live Demo](https://qrghost.sley.nl)
 
-  <img src="https://img.shields.io/badge/Python-3.14-blue?style=flat&logo=python" alt="Python Version" />
   <img src="https://img.shields.io/badge/Docker-Ready-blue?style=flat&logo=docker" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/AI-Assisted-purple?style=flat" alt="AI Assisted" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat" alt="License" />
@@ -52,19 +51,15 @@ You can use QRGhost without any installation.
 </details>
 
 <details>
-<summary><b>💻 Option 2: Local Python</b></summary>
+<summary><b>💻 Option 2: Local Server</b></summary>
 
-You can run the web server directly on your machine. No SSL certificates are needed for localhost.
+You can run a simple web server directly on your machine. No SSL certificates are needed for localhost.
 
-1. **Install Dependencies**:
+1. **Start a local static server** (e.g. Python's built-in http.server):
    ```bash
-   pip install -r requirements.txt
+   python3 -m http.server 8222
    ```
-2. **Start the server**:
-   ```bash
-   python main.py
-   ```
-3. Access the app at [http://localhost:8222](http://localhost:8222).
+2. Access the app at [http://localhost:8222](http://localhost:8222).
 </details>
 
 <details>
@@ -77,14 +72,6 @@ Docker does not require SSL certificates for local development. SSL is only need
    docker-compose up -d --build
    ```
 2. Access the app at [http://localhost:8222](http://localhost:8222).
-
-**For internet hosting:** Place your SSL certificates from a provider like Let's Encrypt in a `certs` directory:
-```text
-certs/
-├── fullchain.pem
-└── privkey.pem
-```
-Then restart the container. Access at `https://your.domain:8222`.
 </details>
 
 <details>
@@ -100,7 +87,6 @@ The included `docker-compose-traefik.yml` is an **example** and must be adapted 
    ```bash
    docker-compose -f docker-compose-traefik.yml up -d --build
    ```
-- Set `REVERSE_PROXY=true` in environment when running behind a reverse proxy to disable SSL certificate validation.
 </details>
 
 <details>
