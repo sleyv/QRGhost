@@ -6,6 +6,7 @@
 
   <img src="https://img.shields.io/badge/Python-3.14-blue?style=flat&logo=python" alt="Python Version" />
   <img src="https://img.shields.io/badge/Docker-Ready-blue?style=flat&logo=docker" alt="Docker Ready" />
+  <img src="https://img.shields.io/badge/AI-Assisted-purple?style=flat" alt="AI Assisted" />
   <img src="https://img.shields.io/badge/License-MIT-green?style=flat" alt="License" />
 </div>
 
