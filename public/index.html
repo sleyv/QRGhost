@@ -75,13 +75,14 @@
       html, body {
         height: 100%;
         margin: 0;
+        overflow: hidden;
       }
       body {
         display: flex;
         flex-direction: column;
       }
       .wrapper {
-        flex: 1;
+        height: 100%;
         display: flex;
         flex-direction: column;
 
@@ -89,6 +90,7 @@
         margin:0 auto;
         padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(26px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));
         position:relative;
+        box-sizing: border-box;
       }
 
       .scanlines{
@@ -672,6 +674,23 @@
         width: 100%;
         display: flex;
         flex-direction: column;
+        overflow-y: auto;
+        flex: 1;
+      }
+      /* Optional: style the scrollbar inside main-content */
+      .main-content::-webkit-scrollbar {
+        width: 8px;
+      }
+      .main-content::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+      }
+      .main-content::-webkit-scrollbar-thumb {
+        background: rgba(0, 255, 170, 0.3);
+        border-radius: 4px;
+      }
+      .main-content::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 255, 170, 0.5);
       }
       .brand {
         flex-shrink: 0;
