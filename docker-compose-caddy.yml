@@ -1,0 +1,30 @@
+# If you are already running Caddy on your server, you can simply add these lines
+# to your existing Caddyfile instead of running this container:
+#
+# qrghost.your.domain {
+#     root * /path/to/qrghost/files
+#     file_server
+# }
+#
+
+services:
+  qrghost:
+    image: caddy:alpine
+    container_name: qrghost
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./index.html:/srv/index.html:ro
+      - ./manifest.json:/srv/manifest.json:ro
+      - ./sw.js:/srv/sw.js:ro
+      - ./icon-192.png:/srv/icon-192.png:ro
+      - ./icon-512.png:/srv/icon-512.png:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    command: caddy file-server --domain qrghost.your.domain
+
+volumes:
+  caddy_data:
+  caddy_config:

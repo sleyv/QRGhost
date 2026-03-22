@@ -90,7 +90,19 @@ The included `docker-compose-traefik.yml` is an **example** and must be adapted 
 </details>
 
 <details>
-<summary><b>🖥️ Option 5: Host with Any Web Server</b></summary>
+<summary><b>🌐 Option 5: Caddy (Automatic HTTPS)</b></summary>
+
+Caddy is an excellent option for production as it automatically provisions and renews Let's Encrypt SSL certificates.
+
+1. Open `docker-compose-caddy.yml` and change `--domain qrghost.your.domain` to your actual domain name.
+2. **Start the container**:
+   ```bash
+   docker-compose -f docker-compose-caddy.yml up -d
+   ```
+</details>
+
+<details>
+<summary><b>🖥️ Option 6: Host with Any Web Server</b></summary>
 
 The `index.html` file can be hosted with any web server or static file hosting service that supports HTTPS.
 
